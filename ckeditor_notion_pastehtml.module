@@ -1,0 +1,93 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function ckeditor_notion_pastehtml_menu() {
+  $items['admin/content/notion-images-upload'] = [
+    'title' => t('Notion Images Upload'),
+    'description' => t('Upload Images from Notion HTML export for CKEditor Notion plugin.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['notion_image_upload_form'],
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => ['administer notion files'],
+  ];
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function ckeditor_notion_pastehtml_permission() {
+  return [
+    'administer notion files' => [
+      'title' => t('Administer notion image upload form.'),
+      'restrict access' => TRUE,
+    ],
+  ];
+}
+
+/**
+ * Implements hook_form().
+ */
+function notion_image_upload_form($form, &$form_state) {
+  $form['notion_images_upload'] = [
+    '#type' => 'plupload',
+    '#required' => TRUE,
+    '#title' => t('Upload Image'),
+    '#description' => t('Upload the images which are part of the notion HTML export.'),
+    '#upload_location' => 'public://notion/',
+  ];
+
+  $form['submit'] = [
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  ];
+  return $form;
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function notion_image_upload_form_submit($form, &$form_state) {
+  $files = $form_state['values']['notion_images_upload'];
+  if (empty($files)) {
+    drupal_set_message(t('No files to upload'));
+    return;
+  }
+  if (!is_dir('public://notion/')) {
+    mkdir('public://notion/', 0777, TRUE);
+  }
+  foreach ($files as $file) {
+    $temporary_file = file_get_contents($file['tmppath']);
+    file_save_data($temporary_file, 'public://notion/' . $file['name'], FILE_EXISTS_RENAME);
+  }
+  drupal_set_message(t('Files uploaded successfully'));
+}
+
+/**
+ * Implements hook_ckeditor_plugin().
+ *
+ */
+function ckeditor_notion_pastehtml_ckeditor_plugin() {
+  return [
+    'pastefromnotion' => [
+      // Name of the plugin used to write it.
+      'name' => 'pastefromnotion',
+      // Description of the plugin - it would be displayed in the plugins management section of profile settings.
+      'desc' => t('Plugin pastefromnotion: Format notion HTML'),
+      // The full URL to the CKEditor plugins directory, with the trailing slash.
+      'path' => base_path() . drupal_get_path('module', 'ckeditor_notion_pastehtml') . '/plugins/pastefromnotion/',
+      'buttons' => [
+        'PasteFromNotion' => [
+          // Path to the button icon. Relative to the plugin directory 'path' unless 'icon_path' is specified.
+          'icon' => 'icons/notion.png',
+          // Optional full path to the directory the icon is located in.
+          'icon_path' => base_path() . drupal_get_path('module', 'ckeditor_notion_pastehtml') . '/plugins/pastefromnotion/',
+          'label' => t('Paste From Notion'),
+        ],
+      ],
+    ],
+  ];
+}

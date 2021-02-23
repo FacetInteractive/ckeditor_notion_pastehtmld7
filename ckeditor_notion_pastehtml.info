@@ -1,0 +1,7 @@
+name = CKEditor Notion Paste HTML
+description = Module to format notion HTML in ckeditor.
+core = 7.x
+package = CKEditor
+version = "7.x-1.0"
+dependencies[] = ckeditor
+dependencies[] = plupload
